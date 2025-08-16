@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { User } from "next-auth"
+// User interface defined locally
 import {
   LayoutDashboard,
   FileText,
@@ -39,6 +39,12 @@ const adminNavItems = [
     icon: Settings,
   },
 ]
+
+interface User {
+  id: string
+  name: string
+  email: string
+}
 
 export function AdminSidebar({ 
   user,

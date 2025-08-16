@@ -88,8 +88,8 @@ export default async function AdminDashboard() {
                 <div className="flex items-center space-x-2">
                   <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                     page.published 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
+                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
                   }`}>
                     {page.published ? 'Published' : 'Draft'}
                   </span>

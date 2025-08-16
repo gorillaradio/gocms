@@ -11,10 +11,10 @@ export default async function PagesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-3xl font-bold tracking-tight">
             Pages
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Manage all your website pages
           </p>
         </div>
@@ -38,8 +38,8 @@ export default async function PagesPage() {
             {pages.map((page) => (
               <div key={page.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{page.title}</h3>
-                  <p className="text-sm text-gray-500">
+                  <h3 className="font-semibold">{page.title}</h3>
+                  <p className="text-sm text-muted-foreground">
                     /{page.slug} • {page.blocks.length} blocks • 
                     Updated {page.updatedAt.toLocaleDateString()}
                   </p>
@@ -48,8 +48,8 @@ export default async function PagesPage() {
                 <div className="flex items-center space-x-2">
                   <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                     page.published 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
+                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
                   }`}>
                     {page.published ? (
                       <>
@@ -81,8 +81,8 @@ export default async function PagesPage() {
             ))}
             
             {pages.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                 <p>No pages yet. Create your first page to get started.</p>
               </div>
             )}

@@ -1,6 +1,6 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db'
 import { hashPassword, verifyPassword } from '@/lib/password'
 import { createSession, deleteSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'

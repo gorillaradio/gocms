@@ -1,7 +1,7 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { verifySessionToken } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
 
 export async function getAuthenticatedUser() {
@@ -27,5 +27,11 @@ export async function getAuthenticatedUser() {
     redirect('/login')
   }
 
-  return user
+  // Ensure name is not null
+  const userWithName = {
+    ...user,
+    name: user.name || 'User'
+  }
+
+  return userWithName
 }
