@@ -13,7 +13,7 @@ interface BlockField {
 interface Block {
   id: string;
   type: string;
-  htmlContent: string;
+  htmlContent: string; // Template con placeholder {{fieldName}}
   order: number;
   fields: BlockField[];
 }
@@ -35,6 +35,17 @@ export function PageRenderer({ page }: PageRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Aggiunge il CSS della pagina
+    const existingLink = document.querySelector(`link[href="/css/${page.slug}.css"]`);
+    if (!existingLink) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = `/css/${page.slug}.css`;
+      document.head.appendChild(link);
+    }
+  }, [page.slug]);
+
+  useEffect(() => {
     console.log('PageRenderer data:', {
       hasHead: !!page.headContent,
       blocksCount: page.blocks.length,
@@ -54,8 +65,8 @@ export function PageRenderer({ page }: PageRendererProps) {
 
     console.log('Blocks:', page.blocks.map(b => ({ type: b.type, fieldsCount: b.fields.length })));
 
-    // Costruisce la pagina usando solo i blocchi dal database
-    const htmlContent = buildPageFromBlocks(page.blocks, page.headContent, page.slug);
+    // Costruisce la pagina usando template + campi separati
+    const htmlContent = buildPageFromTemplates(page.blocks, page.headContent, page.slug);
     console.log('Generated HTML length:', htmlContent.length);
     containerRef.current.innerHTML = htmlContent;
   }, [page.blocks, page.headContent, page.slug]);
@@ -69,57 +80,23 @@ export function PageRenderer({ page }: PageRendererProps) {
   );
 }
 
-function buildPageFromBlocks(blocks: Block[], headContent: string | null, slug: string): string {
+function buildPageFromTemplates(blocks: Block[], headContent: string | null, slug: string): string {
   // Ordina i blocchi per order dal database
   const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order);
   
-  console.log('Building page with blocks order:', sortedBlocks.map(b => ({ type: b.type, order: b.order })));
+  console.log('Building page with template approach:', sortedBlocks.map(b => ({ type: b.type, order: b.order })));
   
-  // Crea mappa di tutti i campi per sostituzione
-  const fieldMap: Record<string, string> = {};
-  blocks.forEach(block => {
-    block.fields.forEach(field => {
-      fieldMap[field.fieldName] = field.value;
-    });
-  });
-
-  // Costruisce il contenuto del body dai blocchi
+  // Costruisce il contenuto del body dai template
   let bodyContent = '';
   
   sortedBlocks.forEach((block) => {
-    let blockHtml = block.htmlContent;
+    let blockHtml = block.htmlContent; // Template con placeholder
     
-    // Sostituisce i contenuti data-editable in questo blocco
-    try {
-      const { parse } = require('node-html-parser');
-      const root = parse(blockHtml);
-      
-      const editableElements = root.querySelectorAll('[data-editable]');
-      let fieldCounter = 1;
-      
-      editableElements.forEach((element: any) => {
-        const fieldName = element.getAttribute('data-editable');
-        
-        let actualFieldName: string;
-        
-        if (fieldName && fieldName !== '') {
-          actualFieldName = fieldName.replace(/_/g, ' ');
-        } else {
-          actualFieldName = `${block.type}-${fieldCounter}`;
-        }
-        
-        const newContent = fieldMap[actualFieldName];
-        if (newContent !== undefined) {
-          element.innerHTML = newContent;
-        }
-        
-        fieldCounter++;
-      });
-      
-      blockHtml = root.toString();
-    } catch (error) {
-      console.error(`Error processing block ${block.type}:`, error);
-    }
+    // Sostituisce i placeholder {{fieldName}} con i valori dal database
+    block.fields.forEach(field => {
+      const placeholder = `{{${field.fieldName}}}`;
+      blockHtml = blockHtml.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), field.value);
+    });
     
     bodyContent += blockHtml + '\n';
   });
@@ -136,14 +113,6 @@ function buildPageFromBlocks(blocks: Block[], headContent: string | null, slug: 
     .replace(/src="assets\//g, `src="/assets/${slug}/`)
     .replace(/href="assets\//g, `href="/assets/${slug}/`);
 
-  // Costruisce l'HTML completo
-  return `<!DOCTYPE html>
-<html>
-<head>
-${processedHead}
-</head>
-<body>
-${bodyContent}
-</body>
-</html>`;
+  // Costruisce l'HTML completo (solo il body per Next.js)
+  return bodyContent;
 }

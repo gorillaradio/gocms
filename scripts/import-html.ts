@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 interface ParsedBlock {
   type: string;
-  htmlContent: string;
+  htmlTemplate: string; // HTML con placeholder {{fieldName}}
   draggable: boolean;
   fields: ParsedField[];
 }
@@ -34,6 +34,58 @@ function generateDisplayName(fieldName: string): string {
     .replace(/\b\w/g, l => l.toUpperCase());
 }
 
+function extractFieldsFromElement(element: any, blockType: string): { fields: ParsedField[], templateHtml: string } {
+  const fields: ParsedField[] = [];
+  const editableElements = element.querySelectorAll('[data-editable]');
+  
+  let fieldCounter = 1;
+  let templateHtml = element.outerHTML;
+  
+  editableElements.forEach((editable: any) => {
+    const customName = editable.getAttribute('data-editable');
+    const fieldName = customName && customName !== '' 
+      ? customName.replace(/_/g, ' ')
+      : `${blockType}-${fieldCounter}`;
+    
+    const fieldType = detectFieldType(editable);
+    let value = '';
+    
+    if (fieldType === 'image') {
+      value = editable.getAttribute('src') || '';
+      // Sostituisci src nell'HTML con placeholder
+      templateHtml = templateHtml.replace(
+        new RegExp(`src="${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'g'),
+        `src="{{${fieldName}}}"`
+      );
+    } else if (fieldType === 'link') {
+      value = editable.getAttribute('href') || '';
+      // Sostituisci href nell'HTML con placeholder
+      templateHtml = templateHtml.replace(
+        new RegExp(`href="${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'g'),
+        `href="{{${fieldName}}}"`
+      );
+    } else {
+      value = editable.text.trim();
+      // Sostituisci contenuto testuale con placeholder
+      templateHtml = templateHtml.replace(
+        value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        `{{${fieldName}}}`
+      );
+    }
+    
+    fields.push({
+      fieldName,
+      displayName: generateDisplayName(fieldName),
+      fieldType,
+      value
+    });
+    
+    fieldCounter++;
+  });
+  
+  return { fields, templateHtml };
+}
+
 function parseHtmlFile(filePath: string, slug: string): { title: string; headContent: string; blocks: ParsedBlock[] } {
   const htmlContent = readFileSync(filePath, 'utf-8');
   const root = parse(htmlContent);
@@ -54,7 +106,7 @@ function parseHtmlFile(filePath: string, slug: string): { title: string; headCon
   
   const blocks = divideBodyIntoBlocks(bodyElement, htmlContent);
   
-  console.log('All detected blocks:', blocks.map(b => ({ type: b.type, draggable: b.draggable })));
+  console.log('Detected blocks:', blocks.map(b => ({ type: b.type, draggable: b.draggable, fields: b.fields.length })));
   
   return { title, headContent, blocks };
 }
@@ -62,82 +114,87 @@ function parseHtmlFile(filePath: string, slug: string): { title: string; headCon
 function divideBodyIntoBlocks(bodyElement: any, htmlContent: string): ParsedBlock[] {
   const blocks: ParsedBlock[] = [];
   
-  // 1. Prima processa tutti i blocchi manuali
+  // 1. Prima trova tutti i blocchi manuali per reference
   const manualBlocks = findManualBlocks(htmlContent);
   console.log('Manual blocks found:', manualBlocks.map(b => `${b.type}:${b.draggable}`));
   
-  // 2. Trova tutti gli elementi del body che NON sono già coperti da blocchi manuali
+  // 2. Processa tutti gli elementi del body nell'ordine HTML originale
   const bodyChildren = bodyElement.childNodes.filter((node: any) => 
     node.nodeType === 1 // Solo elementi, non testo
   );
   
-  // 3. Traccia quali elementi sono già stati processati
-  const processedElements = new Set();
-  
-  // 4. Processa prima i blocchi manuali
-  manualBlocks.forEach(manualBlock => {
-    // Trova l'elemento corrispondente nel DOM
-    const matchingElement = bodyChildren.find((child: any) => {
-      return manualBlock.html.includes(child.outerHTML) || child.outerHTML.includes(manualBlock.html);
-    });
-    
-    if (matchingElement) {
-      processedElements.add(matchingElement);
-      const fields = extractFieldsFromElement(matchingElement, manualBlock.type);
-      
-      blocks.push({
-        type: manualBlock.type,
-        htmlContent: manualBlock.html,
-        draggable: manualBlock.draggable,
-        fields
-      });
-    }
-  });
-  
-  // 5. Processa gli elementi rimanenti come blocchi automatici
   let blockCounter = 1;
   
   bodyChildren.forEach((child: any) => {
-    if (processedElements.has(child)) {
-      return; // Già processato come blocco manuale
-    }
-    
-    const tagName = child.tagName?.toLowerCase();
-    let blockType = '';
-    
-    if (tagName === 'section') {
-      // Usa ID o class della section
-      const id = child.getAttribute('id');
-      const className = child.getAttribute('class');
+    // 3. Controlla se questo elemento fa parte di un blocco manuale
+    const manualBlock = manualBlocks.find(manual => {
+      // Migliore matching: trova per ID o class della section
+      const childId = child.getAttribute('id');
+      const childClass = child.getAttribute('class');
       
-      if (id) {
-        blockType = id;
-      } else if (className) {
-        const match = className.match(/(\w+)(?:-section)?/);
-        blockType = match ? match[1] : 'section';
-      } else {
-        blockType = `section-${blockCounter}`;
+      // Match per ID
+      if (childId && manual.type === childId) {
+        return true;
       }
-    } else if (tagName === 'nav') {
-      blockType = 'navigation';
-    } else if (tagName === 'footer') {
-      blockType = 'footer';
-    } else if (tagName === 'header') {
-      blockType = 'header';
-    } else {
-      blockType = `${tagName}-${blockCounter}`;
-    }
-    
-    const fields = extractFieldsFromElement(child, blockType);
-    
-    blocks.push({
-      type: blockType,
-      htmlContent: child.outerHTML,
-      draggable: false, // Gli elementi automatici non sono draggable di default
-      fields
+      
+      // Match per class (es. galleria-section -> galleria)
+      if (childClass && childClass.includes(manual.type)) {
+        return true;
+      }
+      
+      // Fallback: matching HTML
+      return manual.html.includes(child.outerHTML) || child.outerHTML.includes(manual.html);
     });
     
-    blockCounter++;
+    if (manualBlock) {
+      // Questo è un blocco manuale
+      const { fields, templateHtml } = extractFieldsFromElement(child, manualBlock.type);
+      
+      blocks.push({
+        type: manualBlock.type,
+        htmlTemplate: templateHtml, // Template con placeholder
+        draggable: manualBlock.draggable,
+        fields
+      });
+    } else {
+      // Questo è un blocco automatico
+      const tagName = child.tagName?.toLowerCase();
+      let blockType = '';
+      
+      if (tagName === 'section') {
+        // Usa ID o class della section
+        const id = child.getAttribute('id');
+        const className = child.getAttribute('class');
+        
+        if (id) {
+          blockType = id;
+        } else if (className) {
+          const match = className.match(/(\w+)(?:-section)?/);
+          blockType = match ? match[1] : 'section';
+        } else {
+          blockType = `section-${blockCounter}`;
+        }
+      } else if (tagName === 'nav') {
+        blockType = 'navigation';
+      } else if (tagName === 'footer') {
+        blockType = 'footer';
+      } else if (tagName === 'header') {
+        blockType = 'header';
+      } else {
+        blockType = `${tagName}-${blockCounter}`;
+      }
+      
+      const { fields, templateHtml } = extractFieldsFromElement(child, blockType);
+      
+      blocks.push({
+        type: blockType,
+        htmlTemplate: templateHtml, // Template con placeholder
+        draggable: false, // Gli elementi automatici non sono draggable di default
+        fields
+      });
+      
+      blockCounter++;
+    }
   });
   
   return blocks;
@@ -165,42 +222,7 @@ function findManualBlocks(htmlContent: string): Array<{type: string, html: strin
   return blocks;
 }
 
-function extractFieldsFromElement(element: any, blockType: string): ParsedField[] {
-  const fields: ParsedField[] = [];
-  const editableElements = element.querySelectorAll('[data-editable]');
-  
-  let fieldCounter = 1;
-  
-  editableElements.forEach((editable: any) => {
-    const customName = editable.getAttribute('data-editable');
-    const fieldName = customName && customName !== '' 
-      ? customName.replace(/_/g, ' ')
-      : `${blockType}-${fieldCounter}`;
-    
-    const fieldType = detectFieldType(editable);
-    let value = '';
-    
-    if (fieldType === 'image') {
-      value = editable.getAttribute('src') || '';
-    } else if (fieldType === 'link') {
-      value = editable.getAttribute('href') || '';
-    } else {
-      value = editable.text.trim();
-    }
-    
-    fields.push({
-      fieldName,
-      displayName: generateDisplayName(fieldName),
-      fieldType,
-      value
-    });
-    
-    fieldCounter++;
-  });
-  
-  return fields;
-}
-
+// Copio le altre funzioni necessarie dall'import originale
 function copyAssets(importDir: string, slug: string) {
   const publicDir = join(process.cwd(), 'public');
   
@@ -290,14 +312,14 @@ async function importHtmlFiles() {
         const createdBlock = await prisma.block.create({
           data: {
             type: block.type,
-            htmlContent: block.htmlContent,
+            htmlContent: block.htmlTemplate, // Salva il template con placeholder
             order: i + 1,
             draggable: block.draggable,
             pageId: page.id
           }
         });
         
-        console.log(`Created block ${block.type} with ID: ${createdBlock.id}`);
+        console.log(`Created block ${block.type} with ${block.fields.length} fields and template`);
         
         // Crea i campi del blocco
         for (const field of block.fields) {
@@ -313,7 +335,7 @@ async function importHtmlFiles() {
         }
       }
       
-      console.log(`✓ Imported ${slug} with ${blocks.length} blocks`);
+      console.log(`✓ Imported ${slug} with ${blocks.length} blocks using template approach`);
     }
     
     console.log('\n🎉 HTML import completed!');
