@@ -81,6 +81,14 @@ This is a fresh Next.js project that will evolve into a CMS system. The planned 
 
 - `@/*` maps to `./src/*` for clean imports
 
+## Styling Guidelines
+
+- **ALWAYS use ShadCN/Tailwind CSS variables** for colors instead of hard-coded values
+- Use semantic color variables: `primary`, `secondary`, `muted`, `background`, `foreground`, etc.
+- Example: `bg-primary text-primary-foreground` instead of `bg-blue-600 text-white`
+- Example: `text-muted-foreground` instead of `text-gray-600`
+- This ensures consistent theming and proper dark mode support
+
 ## Notes
 
 - This is currently a fresh Next.js installation

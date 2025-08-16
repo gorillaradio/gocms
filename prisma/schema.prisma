@@ -11,25 +11,39 @@ datasource db {
 }
 
 model Page {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  title     String
-  blocks    Block[]
-  published Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  headContent  String?  // Contenuto del <head> 
+  blocks       Block[]
+  published    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Block {
-  id      String @id @default(cuid())
-  type    String // "hero", "cards", "gallery", "text"
-  variant String // "full", "split", etc.
-  props   Json   // Contenuto del blocco
-  order   Int    // Ordine nella pagina
-  pageId  String
-  page    Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  id          String      @id @default(cuid())
+  type        String      // Nome del blocco (es. "hero", "bio")
+  htmlContent String      // HTML completo del blocco
+  order       Int         // Ordine nella pagina
+  draggable   Boolean     @default(false) // Se il blocco può essere riordinato
+  pageId      String
+  page        Page        @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  fields      BlockField[] // Campi editabili del blocco
 
   @@map("blocks")
+}
+
+model BlockField {
+  id          String @id @default(cuid())
+  fieldName   String // Nome del campo (es. "hero-1", "main_title")
+  displayName String // Nome mostrato nell'admin (es. "Titolo principale")
+  fieldType   String // "text", "textarea", "image", "link"
+  value       String // Valore del campo
+  blockId     String
+  block       Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@map("block_fields")
 }
 
 model User {

@@ -22,55 +22,7 @@ async function main() {
 
   console.log("Created admin user:", admin);
 
-  // Create home page with example blocks
-  const homePage = await prisma.page.upsert({
-    where: { slug: "home" },
-    update: {},
-    create: {
-      slug: "home",
-      title: "Welcome to GoCMS",
-      published: true,
-      blocks: {
-        create: [
-          {
-            type: "hero",
-            variant: "full",
-            order: 1,
-            props: {
-              title: "Welcome to Your New Website",
-              subtitle: "This is a demo homepage created with GoCMS",
-              variant: "full",
-            },
-          },
-          {
-            type: "cards",
-            variant: "grid-3",
-            order: 2,
-            props: {
-              title: "Our Services",
-              cards: [
-                {
-                  title: "Service 1",
-                  description: "Description for service 1",
-                },
-                {
-                  title: "Service 2",
-                  description: "Description for service 2",
-                },
-                {
-                  title: "Service 3",
-                  description: "Description for service 3",
-                },
-              ],
-              variant: "grid-3",
-            },
-          },
-        ],
-      },
-    },
-  });
-
-  console.log("Created home page:", homePage);
+  console.log("Database seeded with admin user and basic settings");
 
   // Create basic site settings
   await prisma.settings.upsert({
