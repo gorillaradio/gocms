@@ -89,6 +89,13 @@ This is a fresh Next.js project that will evolve into a CMS system. The planned 
 - Example: `text-muted-foreground` instead of `text-gray-600`
 - This ensures consistent theming and proper dark mode support
 
+## Development Guidelines
+
+- **NO QUICK FIXES**: Never seek quick solutions or workarounds. Always address problems properly and thoroughly.
+- **PROPER SOLUTIONS**: When encountering issues, analyze the root cause and implement comprehensive fixes.
+- **NO SHORTCUTS**: Avoid deleting components or simplifying complex systems just to make builds pass.
+- **QUALITY OVER SPEED**: Take time to understand dependencies and fix issues correctly.
+
 ## Notes
 
 - This is currently a fresh Next.js installation

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PageEditForm } from "@/components/admin/page-edit-form";
 
 interface PageEditPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function PageEditPage({ params }: PageEditPageProps) {

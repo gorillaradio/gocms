@@ -14,7 +14,7 @@ export async function getAuthenticatedUser() {
 
   const session = await verifySessionToken(token)
   
-  if (!session || session === false) {
+  if (session === false) {
     redirect('/login')
   }
 

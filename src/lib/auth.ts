@@ -12,7 +12,8 @@ export async function createSession(userId: string) {
     .sign(SECRET)
   
   // Imposta cookie di sessione
-  cookies().set('session', token, {
+  const cookieStore = await cookies()
+  cookieStore.set('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -31,5 +32,6 @@ export async function verifySessionToken(token: string): Promise<boolean | { use
 }
 
 export async function deleteSession() {
-  cookies().set('session', '', { expires: new Date(0) }) // invalida il cookie immediatamente
+  const cookieStore = await cookies()
+  cookieStore.set('session', '', { expires: new Date(0) }) // invalida il cookie immediatamente
 }

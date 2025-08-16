@@ -65,11 +65,11 @@ function extractFieldsFromElement(element: any, blockType: string): { fields: Pa
         `href="{{${fieldName}}}"`
       );
     } else {
-      value = editable.text.trim();
-      // Sostituisci contenuto testuale con placeholder
+      value = editable.innerHTML.trim();
+      // Sostituisci contenuto HTML completo con placeholder
       templateHtml = templateHtml.replace(
-        value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-        `{{${fieldName}}}`
+        editable.outerHTML,
+        editable.outerHTML.replace(value, `{{${fieldName}}}`)
       );
     }
     

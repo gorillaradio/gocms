@@ -20,7 +20,7 @@ interface BlockField {
 interface Block {
   id: string;
   type: string;
-  htmlFile: string | null;
+  htmlContent: string;
   order: number;
   draggable: boolean;
   fields: BlockField[];
@@ -118,7 +118,7 @@ export function PageEditForm({ page }: PageEditFormProps) {
       if (!response.ok) throw new Error("Failed to save");
       
       toast.success("Page updated successfully!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to save changes");
     } finally {
       setIsLoading(false);

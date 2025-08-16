@@ -6,6 +6,7 @@ import {
   Settings,
   User as UserIcon,
 } from "lucide-react"
+import Link from "next/link"
 
 import {
   Avatar,
@@ -93,16 +94,16 @@ export function AdminNavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <a href="/admin/settings">
+                <Link href="/admin/settings">
                   <UserIcon />
                   Account
-                </a>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <a href="/admin/settings">
+                <Link href="/admin/settings">
                   <Settings />
                   Settings
-                </a>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>

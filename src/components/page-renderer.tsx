@@ -101,13 +101,6 @@ function buildPageFromTemplates(blocks: Block[], headContent: string | null, slu
     bodyContent += blockHtml + '\n';
   });
 
-  // Aggiorna i percorsi delle risorse nel head
-  let processedHead = headContent || '';
-  processedHead = processedHead
-    .replace(/href="styles\.css"/g, `href="/css/${slug}.css"`)
-    .replace(/src="assets\//g, `src="/assets/${slug}/`)
-    .replace(/href="assets\//g, `href="/assets/${slug}/`);
-
   // Aggiorna i percorsi delle risorse nel body
   bodyContent = bodyContent
     .replace(/src="assets\//g, `src="/assets/${slug}/`)

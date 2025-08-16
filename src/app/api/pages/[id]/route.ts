@@ -3,14 +3,14 @@ import { prisma } from "@/lib/db";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    await params; // id not used directly but params needed for API
     const body = await request.json();
     const { blocks } = body;
 
-    console.log('API received blocks:', blocks.map((b: any) => ({ 
+    console.log('API received blocks:', blocks.map((b: { id: string; type: string; order: number; fields?: unknown[] }) => ({ 
       id: b.id, 
       type: b.type, 
       order: b.order, 
