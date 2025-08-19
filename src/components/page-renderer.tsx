@@ -104,7 +104,8 @@ function buildPageFromTemplates(blocks: Block[], headContent: string | null, slu
   // Aggiorna i percorsi delle risorse nel body
   bodyContent = bodyContent
     .replace(/src="assets\//g, `src="/assets/${slug}/`)
-    .replace(/href="assets\//g, `href="/assets/${slug}/`);
+    .replace(/href="assets\//g, `href="/assets/${slug}/`)
+    .replace(/background-image:\s*url\(['"]?assets\//g, `background-image: url('/assets/${slug}/`);
 
   // Costruisce l'HTML completo (solo il body per Next.js)
   return bodyContent;

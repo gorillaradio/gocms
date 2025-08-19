@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { BackgroundUpload } from "@/components/ui/background-upload";
 import { toast } from "sonner";
 import { ArrowUp, ArrowDown, Save, Eye, Edit2 } from "lucide-react";
 
@@ -41,6 +43,27 @@ interface PageEditFormProps {
 export function PageEditForm({ page }: PageEditFormProps) {
   const [blocks, setBlocks] = useState(page.blocks);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Gestione avviso modifiche non salvate
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = ''; // Per browser moderni
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Traccia modifiche sui blocchi
+  useEffect(() => {
+    const originalBlocks = JSON.stringify(page.blocks);
+    const currentBlocks = JSON.stringify(blocks);
+    setHasUnsavedChanges(originalBlocks !== currentBlocks);
+  }, [blocks, page.blocks]);
   
   console.log('Blocks with correct draggable:', blocks.map((b, i) => ({ 
     index: i, 
@@ -117,6 +140,7 @@ export function PageEditForm({ page }: PageEditFormProps) {
 
       if (!response.ok) throw new Error("Failed to save");
       
+      setHasUnsavedChanges(false); // Reset flag dopo salvataggio
       toast.success("Page updated successfully!");
     } catch {
       toast.error("Failed to save changes");
@@ -128,9 +152,9 @@ export function PageEditForm({ page }: PageEditFormProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button onClick={saveChanges} disabled={isLoading}>
+        <Button onClick={saveChanges} disabled={isLoading} variant={hasUnsavedChanges ? "default" : "secondary"}>
           <Save className="h-4 w-4 mr-2" />
-          {isLoading ? "Saving..." : "Save Changes"}
+          {isLoading ? "Saving..." : hasUnsavedChanges ? "Save Changes *" : "Save Changes"}
         </Button>
         <Button variant="outline" asChild>
           <a href={`/${page.slug}`} target="_blank">
@@ -216,9 +240,14 @@ function BlockFieldsEditor({
 }) {
   const [editingField, setEditingField] = useState<string | null>(null);
 
+  const imageFields = block.fields.filter(field => field.fieldType === 'image');
+  const backgroundFields = block.fields.filter(field => field.fieldType === 'background');
+  const otherFields = block.fields.filter(field => field.fieldType !== 'image' && field.fieldType !== 'background');
+
   return (
     <div className="space-y-4">
-      {(block.fields || []).map((field) => (
+      {/* Render non-image fields first */}
+      {otherFields.map((field) => (
         <div key={field.id} className="space-y-2">
           <div className="flex items-center gap-2">
             {editingField === field.id ? (
@@ -244,26 +273,104 @@ function BlockFieldsEditor({
             </span>
           </div>
           
-          {field.fieldType === 'textarea' ? (
-            <Textarea
-              value={field.value}
-              onChange={(e) => onUpdateField(block.id, field.id, e.target.value)}
-              rows={3}
-            />
-          ) : (
+          {['h1', 'h2', 'h3', 'h4'].includes(field.fieldType) ? (
             <Input
               value={field.value}
               onChange={(e) => onUpdateField(block.id, field.id, e.target.value)}
-              type={field.fieldType === 'image' ? 'url' : 'text'}
+              type="text"
+              placeholder="Enter heading text..."
+            />
+          ) : (
+            <RichTextEditor
+              value={field.value}
+              onChange={(html) => onUpdateField(block.id, field.id, html)}
               placeholder={
-                field.fieldType === 'image' ? 'https://...' :
-                field.fieldType === 'link' ? 'https://...' :
-                'Enter text...'
+                field.fieldType === 'link' ? 'Inserisci URL link...' :
+                'Inserisci contenuto...'
               }
+              minHeight={field.fieldType === 'textarea' ? "120px" : "60px"}
             />
           )}
         </div>
       ))}
+
+      {/* Render image fields in a grid */}
+      {imageFields.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {imageFields.map((field) => (
+            <div key={field.id} className="space-y-2">
+              <div className="flex items-center gap-2">
+                {editingField === field.id ? (
+                  <Input
+                    value={field.displayName}
+                    onChange={(e) => onUpdateDisplayName(block.id, field.id, e.target.value)}
+                    onBlur={() => setEditingField(null)}
+                    onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                    className="max-w-xs"
+                    autoFocus
+                  />
+                ) : (
+                  <Label 
+                    className="cursor-pointer flex items-center gap-2"
+                    onClick={() => setEditingField(field.id)}
+                  >
+                    {field.displayName}
+                    <Edit2 className="h-3 w-3 text-muted-foreground" />
+                  </Label>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  ({field.fieldName})
+                </span>
+              </div>
+              
+              <ImageUpload
+                value={field.value}
+                onChange={(url) => onUpdateField(block.id, field.id, url)}
+                label={`Upload ${field.displayName}`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Render background fields in single column */}
+      {backgroundFields.length > 0 && (
+        <div className="space-y-4">
+          {backgroundFields.map((field) => (
+            <div key={field.id} className="space-y-2">
+              <div className="flex items-center gap-2">
+                {editingField === field.id ? (
+                  <Input
+                    value={field.displayName}
+                    onChange={(e) => onUpdateDisplayName(block.id, field.id, e.target.value)}
+                    onBlur={() => setEditingField(null)}
+                    onKeyDown={(e) => e.key === 'Enter' && setEditingField(null)}
+                    className="max-w-xs"
+                    autoFocus
+                  />
+                ) : (
+                  <Label 
+                    className="cursor-pointer flex items-center gap-2"
+                    onClick={() => setEditingField(field.id)}
+                  >
+                    {field.displayName}
+                    <Edit2 className="h-3 w-3 text-muted-foreground" />
+                  </Label>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  ({field.fieldName})
+                </span>
+              </div>
+              
+              <BackgroundUpload
+                value={field.value}
+                onChange={(url) => onUpdateField(block.id, field.id, url)}
+                label={`Upload ${field.displayName}`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

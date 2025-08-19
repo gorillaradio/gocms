@@ -38,7 +38,7 @@ model BlockField {
   id          String @id @default(cuid())
   fieldName   String // Nome del campo (es. "hero-1", "main_title")
   displayName String // Nome mostrato nell'admin (es. "Titolo principale")
-  fieldType   String // "text", "textarea", "image", "link"
+  fieldType   String // "text", "textarea", "image", "link", "background"
   value       String // Valore del campo
   blockId     String
   block       Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)

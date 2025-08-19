@@ -15,7 +15,7 @@ interface ParsedBlock {
 interface ParsedField {
   fieldName: string;
   displayName: string;
-  fieldType: 'text' | 'textarea' | 'image' | 'link';
+  fieldType: 'text' | 'textarea' | 'image' | 'link' | 'background';
   value: string;
 }
 
@@ -37,6 +37,13 @@ function generateDisplayName(fieldName: string): string {
 function extractFieldsFromElement(element: any, blockType: string): { fields: ParsedField[], templateHtml: string } {
   const fields: ParsedField[] = [];
   const editableElements = element.querySelectorAll('[data-editable]');
+  
+  // Get bg-editable elements - include the element itself and its children
+  const bgEditableElements = [];
+  if (element.getAttribute('bg-editable')) {
+    bgEditableElements.push(element);
+  }
+  bgEditableElements.push(...element.querySelectorAll('[bg-editable]'));
   
   let fieldCounter = 1;
   let templateHtml = element.outerHTML;
@@ -65,11 +72,17 @@ function extractFieldsFromElement(element: any, blockType: string): { fields: Pa
         `href="{{${fieldName}}}"`
       );
     } else {
-      value = editable.innerHTML.trim();
+      // Normalizza HTML rimuovendo indentazione ma preservando newline e formattazione
+      value = editable.innerHTML
+        .trim()
+        .split('\n')
+        .map((line: string) => line.trim())  // Rimuove spazi all'inizio/fine di ogni riga
+        .join('\n');               // Ricongiunge con newline puliti
+      
       // Sostituisci contenuto HTML completo con placeholder
       templateHtml = templateHtml.replace(
         editable.outerHTML,
-        editable.outerHTML.replace(value, `{{${fieldName}}}`)
+        editable.outerHTML.replace(editable.innerHTML.trim(), `{{${fieldName}}}`)
       );
     }
     
@@ -81,6 +94,37 @@ function extractFieldsFromElement(element: any, blockType: string): { fields: Pa
     });
     
     fieldCounter++;
+  });
+  
+  // Process bg-editable elements
+  bgEditableElements.forEach((bgEditable: any) => {
+    const customName = bgEditable.getAttribute('bg-editable');
+    const fieldName = customName && customName !== '' 
+      ? customName.replace(/_/g, ' ')
+      : `${blockType}-bg-${fieldCounter}`;
+    
+    // Extract background image from style attribute
+    const styleAttr = bgEditable.getAttribute('style') || '';
+    const bgImageMatch = styleAttr.match(/background-image:\s*url\(['"]?([^'"]*?)['"]?\)/);
+    const value = bgImageMatch ? bgImageMatch[1] : '';
+    
+    if (value) {
+      // Replace the background-image URL in the style attribute with placeholder
+      const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      templateHtml = templateHtml.replace(
+        new RegExp(`background-image:\\s*url\\(['"]?${escapedValue}['"]?\\)`, 'g'),
+        `background-image: url('{{${fieldName}}}')`
+      );
+      
+      fields.push({
+        fieldName,
+        displayName: generateDisplayName(fieldName),
+        fieldType: 'background',
+        value
+      });
+      
+      fieldCounter++;
+    }
   });
   
   return { fields, templateHtml };

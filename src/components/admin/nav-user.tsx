@@ -3,10 +3,7 @@
 import {
   ChevronsUpDown,
   LogOut,
-  Settings,
-  User as UserIcon,
 } from "lucide-react"
-import Link from "next/link"
 
 import {
   Avatar,
@@ -93,18 +90,6 @@ export function AdminNavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
-                <Link href="/admin/settings">
-                  <UserIcon />
-                  Account
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/admin/settings">
-                  <Settings />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <Paintbrush className="mr-2 h-4 w-4 text-muted-foreground" />

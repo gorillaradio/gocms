@@ -1,16 +1,11 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 // User interface defined locally
-import {
-  LayoutDashboard,
-  FileText,
-  Settings,
-  Command,
-} from "lucide-react"
+import { LayoutDashboard, FileText, Command } from "lucide-react";
 
-import { AdminNavMain } from "@/components/admin/nav-main"
-import { AdminNavUser } from "@/components/admin/nav-user"
+import { AdminNavMain } from "@/components/admin/nav-main";
+import { AdminNavUser } from "@/components/admin/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +14,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import Link from "next/link";
 
 const adminNavItems = [
   {
@@ -33,24 +29,19 @@ const adminNavItems = [
     url: "/admin/pages",
     icon: FileText,
   },
-  {
-    title: "Settings", 
-    url: "/admin/settings",
-    icon: Settings,
-  },
-]
+];
 
 interface User {
-  id: string
-  name: string
-  email: string
+  id: string;
+  name: string;
+  email: string;
 }
 
-export function AdminSidebar({ 
+export function AdminSidebar({
   user,
-  ...props 
+  ...props
 }: {
-  user: User
+  user: User;
 } & React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
@@ -58,7 +49,7 @@ export function AdminSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/admin">
+              <Link href="/admin">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Command className="size-4" />
                 </div>
@@ -66,7 +57,7 @@ export function AdminSidebar({
                   <span className="truncate font-medium">GoCMS</span>
                   <span className="truncate text-xs">Admin Panel</span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -78,5 +69,5 @@ export function AdminSidebar({
         <AdminNavUser user={user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

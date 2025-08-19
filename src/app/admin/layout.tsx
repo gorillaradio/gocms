@@ -1,5 +1,5 @@
-import { getAuthenticatedUser } from "@/lib/user"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { getAuthenticatedUser } from "@/lib/user";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -7,21 +7,21 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 export default async function AdminLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   // Require authentication for all admin routes
-  const user = await getAuthenticatedUser()
+  const user = await getAuthenticatedUser();
 
   return (
     <SidebarProvider>
@@ -37,9 +37,7 @@ export default async function AdminLayout({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/admin">
-                    GoCMS Admin
-                  </BreadcrumbLink>
+                  <BreadcrumbLink href="/admin">GoCMS Admin</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
@@ -49,10 +47,10 @@ export default async function AdminLayout({
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-4 px-16 py-16 pt-16">
           {children}
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
